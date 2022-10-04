@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.NoSuchElementException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -16,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MemberRepositoryV0 {
 
     public Member save(Member member) throws SQLException {
-        String sql = "insert into member(memberId,money) values(?,?)";
+        String sql = "insert into member(member_id,money) values(?,?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -35,6 +36,36 @@ public class MemberRepositoryV0 {
 //            pstmt.close(); //Exception이 여기서 터지면 conn.close가 호출이 안된다 그래서 if
 //            conn.close();
             close(conn,pstmt,null);
+        }
+    }
+
+    public Member findById(String memberId) throws SQLException {
+        String sql = "select * from member where member_id=?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1,memberId);
+
+            rs = pstmt.executeQuery();
+
+            if(rs.next()) {
+                Member member = new Member();
+                member.setMemberId(rs.getString("member_id"));
+                member.setMoney(rs.getInt("money"));
+                return member;
+            } else {
+                throw new NoSuchElementException("member not found");
+            }
+
+        }catch (SQLException e) {
+            log.error("db error",e);
+            throw e;
+        }finally {
+            close(conn,pstmt,rs);
         }
     }
 
